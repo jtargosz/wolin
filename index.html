@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="description" content="Wolin: Guardians of the Oder - a calm tactics game with active pause. Defend a merchant town at the mouth of the Oder, around the year 970." />
+    <title>Wolin: Guardians of the Oder</title>
+  </head>
+  <body>
+    <!-- Static texts carry data-i18n* attributes; src/ui/i18n.ts fills them in for the selected language. -->
+    <canvas id="scene" data-i18n-aria="canvas.label" aria-label="View of the island of Wolin. Mouse and keyboard controls are described in Settings."></canvas>
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="labels" aria-hidden="true"></div>
+
+    <header id="hud" hidden>
+      <div class="hud-group">
+        <span id="wave" class="hud-wave">Wave 1/3</span>
+        <span id="phase" class="hud-phase"></span>
+        <button id="call-wave" type="button" data-i18n="hud.callWave" hidden>Call wave</button>
+      </div>
+      <div class="hud-group">
+        <button id="pause" type="button" aria-pressed="false" data-i18n="hud.pause" data-i18n-title="hud.pauseTitle" title="Pause (Space)">Pause</button>
+        <label class="speed">
+          <span data-i18n="hud.speed">Speed</span>
+          <input id="speed" type="range" min="0" max="2" step="1" value="1" aria-valuetext="1x" />
+          <output id="speed-out">1x</output>
+        </label>
+        <button id="horn" type="button" data-i18n-title="hud.hornTitle" title="Horn signal (G), then click on the map">Horn</button>
+        <button id="mute" type="button" aria-pressed="false" data-i18n="hud.mute" data-i18n-title="hud.muteTitle" title="Mute (M)">Mute</button>
+        <button id="open-settings" type="button" data-i18n="hud.settings">Settings</button>
+      </div>
+      <div class="hud-group hud-meta">
+        <span><span data-i18n="hud.seed">Seed:</span> <span id="seed"></span></span>
+        <span id="debug" hidden></span>
+      </div>
+    </header>
+
+    <div id="paused-banner" data-i18n="hud.pausedBanner" hidden>Paused - give orders calmly</div>
+    <div id="aim-banner" data-i18n="hud.aimBanner" hidden>Pick a spot for the horn signal (Esc cancels)</div>
+
+    <aside id="panel" hidden aria-labelledby="panel-title">
+      <h2 id="panel-title"></h2>
+      <p id="panel-state" class="panel-state"></p>
+      <div class="morale">
+        <span data-i18n="panel.morale">Morale</span>
+        <div class="bar" role="meter" id="panel-morale" aria-valuemin="0" aria-valuemax="100" data-i18n-aria="panel.morale" aria-label="Morale"><div></div></div>
+        <span id="panel-morale-text"></span>
+      </div>
+      <ul id="panel-warriors"></ul>
+      <button id="shield" type="button" hidden></button>
+    </aside>
+
+    <div id="hint" role="note" hidden></div>
+    <div id="toast" hidden></div>
+    <div id="live" class="sr-only" aria-live="polite"></div>
+
+    <section id="title">
+      <div class="title-card">
+        <h1 data-i18n="title.heading">Wolin: Guardians of the Oder</h1>
+        <p class="subtitle" data-i18n="title.subtitle">Around the year 970. Morning at the mouth of the Oder.</p>
+        <p data-i18n="title.body">
+          Ships from many shores come to the merchant town on the island - and not everyone means well. You have three squads, a palisade, and a little time before the fog lifts.
+        </p>
+        <p class="small" data-i18n="title.pauseHint">Space stops time. Give orders calmly while paused.</p>
+        <div class="title-options">
+          <label class="difficulty"><span data-i18n="title.difficulty">Difficulty</span>
+            <select id="difficulty">
+              <option value="easy" data-i18n="difficulty.easy">Easy</option>
+              <option value="normal" data-i18n="difficulty.normal" selected>Normal</option>
+              <option value="hard" data-i18n="difficulty.hard">Hard</option>
+              <option value="brutal" data-i18n="difficulty.brutal">Brutal</option>
+            </select>
+          </label>
+          <label class="difficulty"><span data-i18n="settings.quality">Graphics</span>
+            <select id="quality-title">
+              <option value="low" data-i18n="quality.low">Low</option>
+              <option value="medium" data-i18n="quality.medium">Medium</option>
+              <option value="high" data-i18n="quality.high">High</option>
+            </select>
+          </label>
+          <label class="difficulty"><span data-i18n="settings.language">Language</span>
+            <select id="lang-title">
+              <option value="en">English</option>
+              <option value="pl">Polski</option>
+            </select>
+          </label>
+        </div>
+        <button id="start" type="button" class="primary" data-i18n="title.loading" disabled>Loading…</button>
+        <p id="file-warning" class="small" role="alert" hidden>
+          The game cannot run from a file opened straight from disk (file://). Run <kbd>npm run preview</kbd> and open
+          <a href="http://localhost:4173">http://localhost:4173</a>.
+        </p>
+        <script>
+          // Modules do not load from file://, so this warning cannot use the module-based i18n.
+          if (location.protocol === 'file:') {
+            var pl = (navigator.language || '').toLowerCase().indexOf('pl') === 0;
+            var warning = document.getElementById('file-warning');
+            warning.hidden = false;
+            document.getElementById('start').textContent = pl ? 'Wymagany serwer' : 'Server required';
+            if (pl) {
+              warning.innerHTML =
+                'Gra nie uruchomi się z pliku otwartego bezpośrednio z dysku (file://). Uruchom <kbd>npm run preview</kbd> i otwórz <a href="http://localhost:4173">http://localhost:4173</a>.';
+            }
+          }
+        </script>
+      </div>
+    </section>
+
+    <dialog id="settings" aria-labelledby="settings-title">
+      <form method="dialog">
+        <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
+        <label><span data-i18n="settings.music">Music</span> <input id="vol-music" type="range" min="0" max="1" step="0.05" /></label>
+        <label><span data-i18n="settings.sfx">Effects</span> <input id="vol-sfx" type="range" min="0" max="1" step="0.05" /></label>
+        <label><span data-i18n="settings.ambient">Ambience</span> <input id="vol-ambient" type="range" min="0" max="1" step="0.05" /></label>
+        <label class="check"><input id="opt-motion" type="checkbox" /> <span data-i18n="settings.motion">Reduced motion</span></label>
+        <label class="check"><input id="opt-text" type="checkbox" /> <span data-i18n="settings.text">Larger text</span></label>
+        <label>
+          <span data-i18n="settings.quality">Graphics</span>
+          <select id="quality">
+            <option value="low" data-i18n="quality.low">Low</option>
+            <option value="medium" data-i18n="quality.medium">Medium</option>
+            <option value="high" data-i18n="quality.high">High</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="settings.language">Language</span>
+          <select id="lang">
+            <option value="en">English</option>
+            <option value="pl">Polski</option>
+          </select>
+        </label>
+        <h3 data-i18n="settings.controls">Controls</h3>
+        <ul class="keys">
+          <li data-i18n-html="ctl.select"></li>
+          <li data-i18n-html="ctl.move"></li>
+          <li data-i18n-html="ctl.keys"></li>
+          <li data-i18n-html="ctl.abilities"></li>
+          <li data-i18n-html="ctl.rotate"></li>
+          <li data-i18n-html="ctl.camera"></li>
+        </ul>
+        <div class="actions"><button value="close" class="primary" data-i18n="settings.close">Close</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="end" aria-labelledby="end-title">
+      <form method="dialog">
+        <h2 id="end-title"></h2>
+        <p id="end-text"></p>
+        <ul id="end-fallen"></ul>
+        <div class="actions">
+          <button id="undo-wave" value="undo" type="submit" data-i18n="end.retryWave">Retry the wave</button>
+          <button id="restart-end" value="restart" type="submit" class="primary" data-i18n="end.restart">Start over</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="confirm-restart" aria-labelledby="restart-title">
+      <form method="dialog">
+        <h2 id="restart-title" data-i18n="restart.title">Start over?</h2>
+        <p data-i18n="restart.text">The mission begins again at dawn with the same seed.</p>
+        <div class="actions">
+          <button value="cancel" data-i18n="common.cancel">Cancel</button>
+          <button value="ok" class="primary" data-i18n="end.restart">Start over</button>
+        </div>
+      </form>
+    </dialog>
+
+    <noscript>This game requires JavaScript.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

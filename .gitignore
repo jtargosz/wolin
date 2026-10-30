@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Environment variables (keep .env.example as a template)
+.env
+.env.*
+!.env.example
+
+# Test coverage and caches
+coverage/
+.nyc_output/
+.eslintcache
+.cache/
+.npm
+*.tgz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor (share only extensions and settings)
+.history/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# AI tools (local config)
+.kilo/
+.ai/
+.kiro/
+.opencode
+opencode.json
+*.local
+.playwright-mcp
+
+# Raw screenshots (local only)
+demo/raw/
+
+# Release archives (itch.io export)
+*.zip
+
+# Test and tool output
+playwright-report/
+test-results/
+
+# Other AI tools (local config)
+.claude/
+.cursor/
+.windsurf/

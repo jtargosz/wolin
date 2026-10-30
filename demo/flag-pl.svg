@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="20" viewBox="0 0 32 20" role="img" aria-label="Flaga Polski">
+  <rect width="32" height="10" fill="#ffffff"/>
+  <rect y="10" width="32" height="10" fill="#dc143c"/>
+  <rect x="0.5" y="0.5" width="31" height="19" fill="none" stroke="#b0b0b0"/>
+</svg>
